@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>상담 예약 시스템</title>
-    <!-- Firebase SDK 로드 -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
@@ -13,7 +12,7 @@
         .container { width: 90%; max-width: 550px; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); }
         h1, h2 { text-align: center; color: #333; }
 
-        /* ======== 1. 시작 화면 스타일 ======== */
+        /* 1. 시작 화면 */
         #login-view { text-align: center; }
         .form-group { margin-bottom: 20px; text-align: left; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
@@ -22,24 +21,26 @@
         #enter-btn:disabled { background-color: #a0a0a0; cursor: not-allowed; }
         #student-form-group { display: none; }
 
-        /* ======== 2. 예약 화면 스타일 ======== */
+        /* 2. 예약 화면 */
         #reservation-view { display: none; }
         #back-btn { padding: 8px 15px; background-color: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 20px; }
         .day-tabs { display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 2px solid #dee2e6; }
         .day-tab { padding: 10px 15px; font-size: 1.1em; font-weight: bold; border: none; background: none; cursor: pointer; color: #495057; }
         .day-tab.active { color: #007bff; border-bottom: 2px solid #007bff; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 12px; border: 1px solid #ddd; text-align: center; }
         .time-slot { cursor: pointer; background-color: #e7f3ff; color: #0056b3; font-weight: bold; }
         .booked { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; }
         .cancel-btn { padding: 8px 12px; font-size: 0.9em; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; }
 
-        /* ======== 3. 정보 안내 모달 스타일 (신규 추가) ======== */
+        /* ======== 3. 커스텀 모달 공통 스타일 ======== */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-box { background: #fff; padding: 25px; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; }
         .modal-box h3 { margin-top: 0; margin-bottom: 10px; }
-        .modal-box p { margin-bottom: 25px; font-size: 1.1em; }
-        .modal-btn { padding: 10px 25px; border: none; border-radius: 5px; font-size: 1em; cursor: pointer; background-color: #007bff; color: white; }
+        .modal-box p { margin-bottom: 25px; font-size: 1.1em; white-space: pre-wrap; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; }
+        .modal-btn { padding: 10px 20px; border: none; border-radius: 5px; font-size: 1em; cursor: pointer; }
+        .modal-btn.confirm { background-color: #007bff; color: white; }
+        .modal-btn.cancel { background-color: #6c757d; color: white; }
     </style>
 </head>
 <body>
@@ -52,113 +53,137 @@
         <button id="enter-btn" disabled>예약 페이지로 이동</button>
     </div>
     <div id="reservation-view">
-        <button id="back-btn">&larr; 처음으로</button>
-        <h2 id="reservation-title"></h2>
+        <button id="back-btn">&larr; 처음으로</button><h2 id="reservation-title"></h2>
         <div class="day-tabs" id="day-tabs-container"></div>
         <table id="reservation-table"><thead><tr><th>시간</th><th>예약 상태</th></tr></thead><tbody></tbody></table>
     </div>
 </div>
 
-<!-- ======== 정보 안내 모달 HTML (신규 추가) ======== -->
-<div class="modal-overlay" id="info-modal">
+<!-- 알림 모달 (Alert) -->
+<div class="modal-overlay" id="alert-modal">
     <div class="modal-box">
-        <h3>알림</h3>
-        <p id="info-modal-message"></p>
-        <button class="modal-btn" id="info-modal-close-btn">확인</button>
+        <h3>알림</h3><p id="alert-modal-message"></p>
+        <div class="modal-buttons"><button class="modal-btn confirm" id="alert-modal-close-btn">확인</button></div>
     </div>
 </div>
 
+<!-- 확인 모달 (Confirm) -->
+<div class="modal-overlay" id="confirm-modal">
+    <div class="modal-box">
+        <h3>확인</h3><p id="confirm-modal-message"></p>
+        <div class="modal-buttons">
+            <button class="modal-btn cancel" id="confirm-modal-no-btn">아니오</button>
+            <button class="modal-btn confirm" id="confirm-modal-yes-btn">예</button>
+        </div>
+    </div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const firebaseConfig = {
+    const firebaseConfig = { 
         apiKey: "AIzaSyAYAWnTBTIa4aEsNFrKhRicSfLz9wv58Ew",
         authDomain: "bcs-parent-teacher-conference.firebaseapp.com",
         projectId: "bcs-parent-teacher-conference",
         storageBucket: "bcs-parent-teacher-conference.firebasestorage.app",
         messagingSenderId: "265252330101",
-        appId: "1:265252330101:web:749b8ee8ab9de7d102363c"
-    };
-    firebase.initializeApp(firebaseConfig);
+        appId: "1:265252330101:web:749b8ee8ab9de7d102363c"};
+        firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const studentData = {
-      "희락반": ["김하선", "노주하", "배라임", "안시아", "안시완", "오하린", "이주혜", "이은혜", "이하은", "정은유", "황찬유"],
-      "자비반": ["김성찬", "김주원", "김준호", "김이언", "방예인", "배하임", "성제호", "오하엘", "이재이", "이재인", "최연준", "허재인"],
-      "양선반": ["김하준", "김하령", "신시온", "이요셉", "이재은", "전해인", "최연아", "한이음", "현승리", "홍수아"],
-      "충성반": ["김도연", "류근희", "성찬영", "신온유", "이요한", "이태훈", "전표인", "정지한"],
-      "온유반": ["고준", "김다은", "김민서", "김하람", "박천우", "안지후", "이청음", "장서진", "한담이", "홍성민"],
-      "은혜반": ["김민주", "김시영", "김태린", "김하윤", "김하음", "양예린", "양예은", "장서연", "정민석", "한준경"]
+    const studentData = { 
+        "희락반": ["김하선", "노주하", "배라임", "안시아", "안시완", "오하린", "이주혜", "이은혜", "이하은", "정은유", "황찬유"],
+        "자비반": ["김성찬", "김주원", "김준호", "김이언", "방예인", "배하임", "성제호", "오하엘", "이재이", "이재인", "최연준", "허재인"],
+        "양선반": ["김하준", "김하령", "신시온", "이요셉", "이재은", "전해인", "최연아", "한이음", "현승리", "홍수아"],
+        "충성반": ["김도연", "류근희", "성찬영", "신온유", "이요한", "이태훈", "전표인", "정지한"],
+        "온유반": ["고준", "김다은", "김민서", "김하람", "박천우", "안지후", "이청음", "장서진", "한담이", "홍성민"],
+        "은혜반": ["김민주", "김시영", "김태린", "김하윤", "김하음", "양예린", "양예은", "장서연", "정민석", "한준경"]
     };
 
     // DOM 요소
     const loginView = document.getElementById('login-view'), reservationView = document.getElementById('reservation-view');
-    const classSelect = document.getElementById('class-select'), studentFormGroup = document.getElementById('student-form-group'), studentSelect = document.getElementById('student-select');
+    const classSelect = document.getElementById('class-select'), studentSelect = document.getElementById('student-select');
+    const studentFormGroup = document.getElementById('student-form-group');
     const enterBtn = document.getElementById('enter-btn'), backButton = document.getElementById('back-btn');
     const reservationTitle = document.getElementById('reservation-title'), dayTabsContainer = document.getElementById('day-tabs-container'), tableBody = document.querySelector('#reservation-table tbody');
     
-    // 신규 모달 요소
-    const infoModal = document.getElementById('info-modal');
-    const infoModalMessage = document.getElementById('info-modal-message');
-    const infoModalCloseBtn = document.getElementById('info-modal-close-btn');
+    // 모달 요소
+    const alertModal = document.getElementById('alert-modal'), alertModalMessage = document.getElementById('alert-modal-message'), alertModalCloseBtn = document.getElementById('alert-modal-close-btn');
+    const confirmModal = document.getElementById('confirm-modal'), confirmModalMessage = document.getElementById('confirm-modal-message'), confirmYesBtn = document.getElementById('confirm-modal-yes-btn'), confirmNoBtn = document.getElementById('confirm-modal-no-btn');
 
     const dayNames = ["월", "화", "수", "목", "금"];
     const startTime = 17 * 60, endTime = 20 * 60, interval = 30;
     let currentUserName = '', currentClass = '', currentDay = '';
+    let resolveConfirm;
 
-    // 정보 모달 닫기 이벤트
-    infoModalCloseBtn.addEventListener('click', () => infoModal.style.display = 'none');
-
-    // 정보 모달 표시 함수 (신규 추가)
-    function showInfoModal(message) {
-        infoModalMessage.textContent = message;
-        infoModal.style.display = 'flex';
+    // ======== 모달 관련 함수 ========
+    function showAlertModal(message) {
+        alertModalMessage.textContent = message;
+        alertModal.style.display = 'flex';
     }
+    alertModalCloseBtn.addEventListener('click', () => alertModal.style.display = 'none');
+
+    function showConfirmModal(message) {
+        confirmModalMessage.textContent = message;
+        confirmModal.style.display = 'flex';
+        return new Promise(resolve => { resolveConfirm = resolve; });
+    }
+    confirmYesBtn.addEventListener('click', () => { confirmModal.style.display = 'none'; if (resolveConfirm) resolveConfirm(true); });
+    confirmNoBtn.addEventListener('click', () => { confirmModal.style.display = 'none'; if (resolveConfirm) resolveConfirm(false); });
     
-    // 예약 전 중복 체크 함수 (신규 추가)
+    // ======== 예약 관련 함수 ========
     async function checkForExistingBooking(userName, className) {
         for (const day of dayNames) {
-            const docId = `${className}_${day}`;
-            const docRef = db.collection("reservations").doc(docId);
+            const docRef = db.collection("reservations").doc(`${className}_${day}`);
             const docSnap = await docRef.get();
             if (docSnap.exists) {
-                const reservationData = docSnap.data();
-                for (const time in reservationData) {
-                    if (reservationData[time] === userName) {
-                        return { day: day, time: time }; // 기존 예약 정보 반환
-                    }
-                }
+                const data = docSnap.data();
+                for (const time in data) { if (data[time] === userName) return { day, time }; }
             }
         }
-        return null; // 기존 예약 없음
+        return null;
     }
 
-    // 예약 기능 (중복 체크 로직 추가)
     async function bookSlot(timeString) {
-        // 1. 예약 전 모든 요일에 대해 중복 예약이 있는지 확인
         const existingBooking = await checkForExistingBooking(currentUserName, currentClass);
         if (existingBooking) {
-            const message = `이미 예약된 시간이 있습니다.\n${existingBooking.day}요일, ${existingBooking.time}`;
-            showInfoModal(message);
-            return; // 예약 절차 중단
+            showAlertModal(`이미 예약된 시간이 있습니다.\n${existingBooking.day}요일, ${existingBooking.time}`);
+            return;
         }
 
-        // 2. 중복이 없으면 예약 진행
-        const name = currentUserName;
-        const docId = `${currentClass}_${currentDay}`;
-        const docRef = db.collection("reservations").doc(docId);
+        const docRef = db.collection("reservations").doc(`${currentClass}_${currentDay}`);
         try {
-            await docRef.set({ [timeString]: name }, { merge: true });
-            alert('예약이 완료되었습니다.');
+            await docRef.set({ [timeString]: currentUserName }, { merge: true });
+            showAlertModal('예약이 완료되었습니다.');
             generateReservationTable();
-        } catch (error) { console.error("예약 오류: ", error); alert("예약에 실패했습니다."); }
+        } catch (error) {
+            console.error("예약 오류: ", error);
+            showAlertModal("오류가 발생하여 예약에 실패했습니다.");
+        }
     }
-    function initializeLoginView() { Object.keys(studentData).forEach(className => classSelect.add(new Option(className, className))); classSelect.addEventListener('change', () => { const selectedClass = classSelect.value; studentSelect.innerHTML = ''; enterBtn.disabled = true; if (selectedClass) { studentFormGroup.style.display = 'block'; const students = studentData[selectedClass]; studentSelect.add(new Option('-- 이름 선택 --', '')); students.forEach(studentName => studentSelect.add(new Option(studentName, studentName))); } else { studentFormGroup.style.display = 'none'; } }); studentSelect.addEventListener('change', () => { enterBtn.disabled = !studentSelect.value; }); enterBtn.addEventListener('click', () => { currentClass = classSelect.value; currentUserName = studentSelect.value; showReservationView(); }); backButton.addEventListener('click', showLoginView); }
+    
+    async function cancelBooking(timeString) {
+        const confirmed = await showConfirmModal('정말로 이 예약을 취소하시겠습니까?');
+        if (!confirmed) return;
+        
+        const docRef = db.collection("reservations").doc(`${currentClass}_${currentDay}`);
+        const FieldValue = firebase.firestore.FieldValue;
+        try {
+            await docRef.update({ [timeString]: FieldValue.delete() });
+            showAlertModal('예약이 취소되었습니다.');
+            generateReservationTable();
+        } catch (error) {
+            console.error("예약 취소 오류: ", error);
+            showAlertModal("예약 취소에 실패했습니다.");
+        }
+    }
+    
+    // ======== UI 및 테이블 렌더링 함수 (변경 없음) ========
+    function initializeLoginView() { Object.keys(studentData).forEach(name => classSelect.add(new Option(name, name))); classSelect.addEventListener('change', () => { const selectedClass = classSelect.value; studentSelect.innerHTML = ''; enterBtn.disabled = true; if (selectedClass) { studentFormGroup.style.display = 'block'; studentSelect.add(new Option('-- 이름 선택 --', '')); studentData[selectedClass].forEach(name => studentSelect.add(new Option(name, name))); } else { studentFormGroup.style.display = 'none'; } }); studentSelect.addEventListener('change', () => { enterBtn.disabled = !studentSelect.value; }); enterBtn.addEventListener('click', () => { currentClass = classSelect.value; currentUserName = studentSelect.value; showReservationView(); }); backButton.addEventListener('click', showLoginView); }
     function showReservationView() { currentDay = dayNames[0]; loginView.style.display = 'none'; reservationView.style.display = 'block'; reservationTitle.textContent = `${currentClass} / ${currentUserName}님`; generateDayTabs(); generateReservationTable(); }
     function showLoginView() { reservationView.style.display = 'none'; loginView.style.display = 'block'; classSelect.value = ''; studentFormGroup.style.display = 'none'; studentSelect.innerHTML = ''; enterBtn.disabled = true; }
     function generateDayTabs() { dayTabsContainer.innerHTML = ''; dayNames.forEach(dayName => { const tab = document.createElement('button'); tab.className = 'day-tab'; tab.textContent = dayName; if (dayName === currentDay) tab.classList.add('active'); tab.addEventListener('click', () => { currentDay = dayName; document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); generateReservationTable(); }); dayTabsContainer.appendChild(tab); }); }
-    async function generateReservationTable() { tableBody.innerHTML = '<tr><td colspan="2">예약 정보를 불러오는 중...</td></tr>'; const docId = `${currentClass}_${currentDay}`; const docRef = db.collection("reservations").doc(docId); const docSnap = await docRef.get(); const reservationData = docSnap.exists ? docSnap.data() : {}; tableBody.innerHTML = ''; for (let time = startTime; time < endTime; time += interval) { const row = document.createElement('tr'); const timeCell = document.createElement('td'); const statusCell = document.createElement('td'); const timeString = `${String(Math.floor(time/60)).padStart(2,'0')}:${String(time%60).padStart(2,'0')}`; timeCell.textContent = `${timeString} - ${String(Math.floor((time+interval)/60)).padStart(2,'0')}:${String((time+interval)%60).padStart(2,'0')}`; const bookedName = reservationData[timeString]; if (bookedName) { if (bookedName === currentUserName) { statusCell.innerHTML = `(본인 예약) <button class="cancel-btn">취소하기</button>`; statusCell.querySelector('.cancel-btn').addEventListener('click', () => cancelBooking(timeString)); } else { statusCell.textContent = `${bookedName} (예약 완료)`; statusCell.classList.add('booked'); } } else { statusCell.textContent = '예약하기'; statusCell.classList.add('time-slot'); statusCell.addEventListener('click', () => bookSlot(timeString)); } row.appendChild(timeCell); row.appendChild(statusCell); tableBody.appendChild(row); } }
-    async function cancelBooking(timeString) { if (!confirm('정말로 이 예약을 취소하시겠습니까?')) return; const docId = `${currentClass}_${currentDay}`; const docRef = db.collection("reservations").doc(docId); const FieldValue = firebase.firestore.FieldValue; try { await docRef.update({ [timeString]: FieldValue.delete() }); alert('예약이 취소되었습니다.'); generateReservationTable(); } catch (error) { console.error("예약 취소 오류: ", error); alert("예약 취소에 실패했습니다."); } }
+    async function generateReservationTable() { tableBody.innerHTML = '<tr><td colspan="2">예약 정보를 불러오는 중...</td></tr>'; const docRef = db.collection("reservations").doc(`${currentClass}_${currentDay}`); const docSnap = await docRef.get(); const reservationData = docSnap.exists ? docSnap.data() : {}; tableBody.innerHTML = ''; for (let time = startTime; time < endTime; time += interval) { const row = document.createElement('tr'); const timeCell = document.createElement('td'); const statusCell = document.createElement('td'); const timeString = `${String(Math.floor(time/60)).padStart(2,'0')}:${String(time%60).padStart(2,'0')}`; timeCell.textContent = `${timeString} - ${String(Math.floor((time+interval)/60)).padStart(2,'0')}:${String((time+interval)%60).padStart(2,'0')}`; const bookedName = reservationData[timeString]; if (bookedName) { if (bookedName === currentUserName) { statusCell.innerHTML = `(본인 예약) <button class="cancel-btn">취소하기</button>`; statusCell.querySelector('.cancel-btn').addEventListener('click', () => cancelBooking(timeString)); } else { statusCell.textContent = `${bookedName} (예약 완료)`; statusCell.classList.add('booked'); } } else { statusCell.textContent = '예약하기'; statusCell.classList.add('time-slot'); statusCell.addEventListener('click', () => bookSlot(timeString)); } row.appendChild(timeCell); row.appendChild(statusCell); tableBody.appendChild(row); } }
+    
     initializeLoginView();
 });
 </script>
