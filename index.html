@@ -11,17 +11,19 @@
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f4f4f4; }
         .container { width: 90%; max-width: 550px; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); }
-        h1, h2, h3 { text-align: center; color: #333; }
+        h1, h2 { text-align: center; color: #333; }
 
-        /* ======== 1. 시작 화면 (로그인) 스타일 ======== */
+        /* ======== 1. 시작 화면 스타일 ======== */
         #login-view { text-align: center; }
         .form-group { margin-bottom: 20px; text-align: left; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group select { width: 100%; padding: 12px; font-size: 1em; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        .form-group select { width: 100%; padding: 12px; font-size: 1em; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
         #enter-btn { width: 100%; padding: 15px; font-size: 1.1em; font-weight: bold; color: white; background-color: #007bff; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s; }
         #enter-btn:hover { background-color: #0056b3; }
+        #enter-btn:disabled { background-color: #a0a0a0; cursor: not-allowed; }
+        #student-form-group { display: none; } /* 학생 선택은 처음엔 숨김 */
 
-        /* ======== 2. 예약 화면 스타일 ======== */
+        /* ======== 2. 예약 화면 스타일 (이전과 동일) ======== */
         #reservation-view { display: none; }
         #back-btn { padding: 8px 15px; background-color: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 20px; }
         .day-tabs { display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 2px solid #dee2e6; }
@@ -31,35 +33,27 @@
         th, td { padding: 12px; border: 1px solid #ddd; text-align: center; }
         th { background-color: #f2f2f2; }
         .time-slot { cursor: pointer; background-color: #e7f3ff; color: #0056b3; font-weight: bold; }
-        .time-slot:hover { background-color: #d0e7ff; }
-        .booked { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; font-weight: normal; }
-        /* 본인 예약 취소 버튼 스타일 */
+        .booked { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; }
         .cancel-btn { padding: 8px 12px; font-size: 0.9em; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        .cancel-btn:hover { background-color: #c82333; }
-
-        /* ======== 3. 커스텀 모달(입력창) 스타일 ======== */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-box { background: #fff; padding: 25px; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; }
-        .modal-box h3 { margin-top: 0; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- ======== 1. 시작 화면 (로그인) ======== -->
+    <!-- ======== 1. 시작 화면 ======== -->
     <div id="login-view">
         <h1>상담 예약</h1>
         <div class="form-group">
-            <label for="name-input">학생 이름</label>
-            <input type="text" id="name-input" placeholder="성함을 입력하세요">
-        </div>
-        <div class="form-group">
-            <label for="class-select">반 선택</label>
+            <label for="class-select">1. 반을 선택하세요</label>
             <select id="class-select">
-                <!-- 반 목록이 동적으로 추가됩니다 -->
+                <option value="">-- 반 선택 --</option>
             </select>
         </div>
-        <button id="enter-btn">예약 페이지로 이동</button>
+        <div class="form-group" id="student-form-group">
+            <label for="student-select">2. 이름을 선택하세요</label>
+            <select id="student-select"></select>
+        </div>
+        <button id="enter-btn" disabled>예약 페이지로 이동</button>
     </div>
 
     <!-- ======== 2. 예약 화면 ======== -->
@@ -68,12 +62,7 @@
         <h2 id="reservation-title"></h2>
         <div class="day-tabs" id="day-tabs-container"></div>
         <table id="reservation-table">
-            <thead>
-                <tr>
-                    <th>시간</th>
-                    <th>예약 상태</th>
-                </tr>
-            </thead>
+            <thead><tr><th>시간</th><th>예약 상태</th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
@@ -83,7 +72,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const firebaseConfig = {
-        apiKey: "AIzaSyAYAWnTBTIa4aEsNFrKhRicSfLz9wv58Ew",
+      apiKey: "AIzaSyAYAWnTBTIa4aEsNFrKhRicSfLz9wv58Ew",
         authDomain: "bcs-parent-teacher-conference.firebaseapp.com",
         projectId: "bcs-parent-teacher-conference",
         storageBucket: "bcs-parent-teacher-conference.firebasestorage.app",
@@ -93,11 +82,25 @@ document.addEventListener('DOMContentLoaded', function () {
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // =======================================================
+    // ▼▼▼ 이 부분에 실제 반과 학생 명단을 기입하시면 됩니다 ▼▼▼
+    const studentData = {
+      "희락반": ["김하선", "노주하", "배라임", "안시아", "안시완", "오하린", "이주혜", "이은혜", "이하은", "정은유", "황찬유"],
+      "자비반": ["김성찬", "김주원", "김준호", "김이언", "방예인", "배하임", "성제호", "오하엘", "이재이", "이재인", "최연준", "허재인"],
+      "양선반": ["김하준", "김하령", "신시온", "이요셉", "이재은", "전해인", "최연아", "한이음", "현승리", "홍수아"],
+      "충성반": ["김도연", "류근희", "성찬영", "신온유", "이요한", "이태훈", "전표인", "정지한"],
+      "온유반": ["고준", "김다은", "김민서", "김하람", "박천우", "안지후", "이청음", "장서진", "한담이", "홍성민"],
+      "은혜반": ["김민주", "김시영", "김태린", "김하윤", "김하음", "양예린", "양예은", "장서연", "정민석", "한준경"]
+    };
+    // ▲▲▲ 여기까지 수정하시면 됩니다 ▲▲▲
+    // =======================================================
+
     // DOM 요소
     const loginView = document.getElementById('login-view');
     const reservationView = document.getElementById('reservation-view');
-    const nameInput = document.getElementById('name-input');
     const classSelect = document.getElementById('class-select');
+    const studentFormGroup = document.getElementById('student-form-group');
+    const studentSelect = document.getElementById('student-select');
     const enterBtn = document.getElementById('enter-btn');
     const backButton = document.getElementById('back-btn');
     const reservationTitle = document.getElementById('reservation-title');
@@ -105,37 +108,47 @@ document.addEventListener('DOMContentLoaded', function () {
     const tableBody = document.querySelector('#reservation-table tbody');
 
     // 데이터 및 설정
-    const classNames = ["희락반", "자비반", "양선반", "충성반", "온유반", "은혜반"];
     const dayNames = ["월", "화", "수", "목", "금"];
-    const startTime = 17 * 60;
-    const endTime = 20 * 60;
-    const interval = 30;
+    const startTime = 17 * 60, endTime = 20 * 60, interval = 30;
     
-    // 현재 사용자 정보를 저장할 변수
-    let currentUserName = '';
-    let currentClass = '';
-    let currentDay = '';
+    let currentUserName = '', currentClass = '', currentDay = '';
 
     // 1. 시작 화면 초기화
     function initializeLoginView() {
-        // 드롭다운에 반 목록 채우기
-        classNames.forEach(name => {
-            const option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            classSelect.appendChild(option);
+        // 반 드롭다운 채우기
+        Object.keys(studentData).forEach(className => {
+            const option = new Option(className, className);
+            classSelect.add(option);
+        });
+
+        // 반 선택 시 학생 드롭다운 업데이트
+        classSelect.addEventListener('change', () => {
+            const selectedClass = classSelect.value;
+            studentSelect.innerHTML = ''; // 학생 목록 초기화
+            enterBtn.disabled = true;
+
+            if (selectedClass) {
+                studentFormGroup.style.display = 'block';
+                const students = studentData[selectedClass];
+                studentSelect.add(new Option('-- 이름 선택 --', ''));
+                students.forEach(studentName => {
+                    studentSelect.add(new Option(studentName, studentName));
+                });
+            } else {
+                studentFormGroup.style.display = 'none';
+            }
         });
         
+        // 학생 선택 시 '들어가기' 버튼 활성화
+        studentSelect.addEventListener('change', () => {
+            enterBtn.disabled = !studentSelect.value;
+        });
+
         // '들어가기' 버튼 이벤트
         enterBtn.addEventListener('click', () => {
-            const name = nameInput.value.trim();
-            const selectedClass = classSelect.value;
-            if (!name) {
-                alert('이름을 입력해주세요.');
-                return;
-            }
-            currentUserName = name;
-            showReservationView(selectedClass);
+            currentClass = classSelect.value;
+            currentUserName = studentSelect.value;
+            showReservationView();
         });
         
         // '처음으로' 버튼 이벤트
@@ -143,12 +156,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // 2. 예약 화면 표시
-    function showReservationView(className) {
-        currentClass = className;
-        currentDay = dayNames[0]; // 기본 '월'요일
+    function showReservationView() {
+        currentDay = dayNames[0];
         loginView.style.display = 'none';
         reservationView.style.display = 'block';
-        reservationTitle.textContent = `${currentClass} (${currentUserName}님)`; // 제목에 이름 표시
+        reservationTitle.textContent = `${currentClass} / ${currentUserName}님`;
         generateDayTabs();
         generateReservationTable();
     }
@@ -157,10 +169,15 @@ document.addEventListener('DOMContentLoaded', function () {
     function showLoginView() {
         reservationView.style.display = 'none';
         loginView.style.display = 'block';
-        currentUserName = ''; // 사용자 이름 초기화
+        // 선택 상태 초기화
+        classSelect.value = '';
+        studentFormGroup.style.display = 'none';
+        studentSelect.innerHTML = '';
+        enterBtn.disabled = true;
     }
 
-    // 4. 요일 탭 생성 (변경 없음)
+    // ... 이하 예약 관련 함수들은 이전과 거의 동일 ...
+
     function generateDayTabs() {
         dayTabsContainer.innerHTML = '';
         dayNames.forEach(dayName => {
@@ -178,7 +195,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 5. 예약 테이블 생성 (삭제 기능 추가)
     async function generateReservationTable() {
         tableBody.innerHTML = '<tr><td colspan="2">예약 정보를 불러오는 중...</td></tr>';
         const docId = `${currentClass}_${currentDay}`;
@@ -193,21 +209,17 @@ document.addEventListener('DOMContentLoaded', function () {
             const statusCell = document.createElement('td');
             const timeString = `${String(Math.floor(time/60)).padStart(2,'0')}:${String(time%60).padStart(2,'0')}`;
             timeCell.textContent = `${timeString} - ${String(Math.floor((time+interval)/60)).padStart(2,'0')}:${String((time+interval)%60).padStart(2,'0')}`;
-
             const bookedName = reservationData[timeString];
 
             if (bookedName) {
                 if (bookedName === currentUserName) {
-                    // 본인 예약인 경우 -> 취소 버튼 표시
                     statusCell.innerHTML = `(본인 예약) <button class="cancel-btn">취소하기</button>`;
                     statusCell.querySelector('.cancel-btn').addEventListener('click', () => cancelBooking(timeString));
                 } else {
-                    // 다른 사람 예약인 경우
                     statusCell.textContent = `${bookedName} (예약 완료)`;
                     statusCell.classList.add('booked');
                 }
             } else {
-                // 예약 가능 슬롯
                 statusCell.textContent = '예약하기';
                 statusCell.classList.add('time-slot');
                 statusCell.addEventListener('click', () => bookSlot(timeString));
@@ -216,9 +228,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // 6. 예약 기능
     async function bookSlot(timeString) {
-        // 예약 시에는 현재 로그인된 사용자 이름(currentUserName)을 사용
         const name = currentUserName;
         const docId = `${currentClass}_${currentDay}`;
         const docRef = db.collection("reservations").doc(docId);
@@ -226,34 +236,19 @@ document.addEventListener('DOMContentLoaded', function () {
             await docRef.set({ [timeString]: name }, { merge: true });
             alert('예약이 완료되었습니다.');
             generateReservationTable();
-        } catch (error) {
-            console.error("예약 오류: ", error);
-            alert("예약에 실패했습니다.");
-        }
+        } catch (error) { console.error("예약 오류: ", error); alert("예약에 실패했습니다."); }
     }
     
-    // 7. 예약 취소 기능 (신규 추가)
     async function cancelBooking(timeString) {
-        if (!confirm('정말로 이 예약을 취소하시겠습니까?')) {
-            return;
-        }
-        
+        if (!confirm('정말로 이 예약을 취소하시겠습니까?')) return;
         const docId = `${currentClass}_${currentDay}`;
         const docRef = db.collection("reservations").doc(docId);
-        
-        // Firestore에서 특정 필드를 삭제하기 위한 특별한 값
         const FieldValue = firebase.firestore.FieldValue;
-
         try {
-            await docRef.update({
-                [timeString]: FieldValue.delete()
-            });
+            await docRef.update({ [timeString]: FieldValue.delete() });
             alert('예약이 취소되었습니다.');
-            generateReservationTable(); // 테이블 새로고침
-        } catch (error) {
-            console.error("예약 취소 오류: ", error);
-            alert("예약 취소에 실패했습니다.");
-        }
+            generateReservationTable();
+        } catch (error) { console.error("예약 취소 오류: ", error); alert("예약 취소에 실패했습니다."); }
     }
 
     // 페이지 로드 시 시작 화면 초기화
