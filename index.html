@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>반별/요일별 상담 예약</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 90%;
+            max-width: 550px;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        /* 1. 반 선택 화면 */
+        #class-selection-view {
+            text-align: center;
+        }
+        .class-button-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .class-btn {
+            padding: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .class-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* 2. 예약 화면 */
+        #reservation-view {
+            display: none;
+        }
+        #back-btn {
+            padding: 8px 15px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        #back-btn:hover {
+            background-color: #5a6268;
+        }
+
+        /* 요일 탭 스타일 */
+        .day-tabs {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .day-tab {
+            padding: 10px 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #495057;
+            border-bottom: 2px solid transparent;
+        }
+        .day-tab.active {
+            color: #007bff;
+            border-bottom-color: #007bff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .time-slot {
+            cursor: pointer;
+            background-color: #e7f3ff;
+            color: #0056b3;
+            font-weight: bold;
+        }
+        .time-slot:hover {
+            background-color: #d0e7ff;
+        }
+        .booked {
+            background-color: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 1. 반 선택 화면 -->
+    <div id="class-selection-view">
+        <h1>상담 예약</h1>
+        <h2>상담을 원하는 반을 선택해주세요.</h2>
+        <div class="class-button-container" id="class-buttons"></div>
+    </div>
+
+    <!-- 2. 예약 테이블 화면 -->
+    <div id="reservation-view">
+        <button id="back-btn">&larr; 반 선택 화면으로</button>
+        <h2 id="reservation-title"></h2>
+        <div class="day-tabs" id="day-tabs-container"></div>
+        <table id="reservation-table">
+            <thead>
+                <tr>
+                    <th>시간</th>
+                    <th>예약 상태</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // DOM 요소
+    const classSelectionView = document.getElementById('class-selection-view');
+    const reservationView = document.getElementById('reservation-view');
+    const classButtonContainer = document.getElementById('class-buttons');
+    const reservationTitle = document.getElementById('reservation-title');
+    const dayTabsContainer = document.getElementById('day-tabs-container');
+    const tableBody = document.querySelector('#reservation-table tbody');
+    const backButton = document.getElementById('back-btn');
+
+    // 데이터 및 설정
+    const classNames = ["희락반", "자비반", "양선반", "충성반", "온유반", "은혜반"];
+    const dayNames = ["월", "화", "수", "목", "금"];
+    const startTime = 17 * 60;
+    const endTime = 20 * 60;
+    const interval = 30;
+
+    // 전체 예약 데이터를 저장할 객체
+    let reservationData = {};
+    let currentClass = '';
+    let currentDay = '';
+
+    // 데이터 구조 초기화
+    function initializeData() {
+        classNames.forEach(className => {
+            reservationData[className] = {};
+            dayNames.forEach(dayName => {
+                reservationData[className][dayName] = {};
+            });
+        });
+    }
+
+    // 1. 초기 화면 설정
+    function initializeClassSelection() {
+        classNames.forEach(name => {
+            const button = document.createElement('button');
+            button.className = 'class-btn';
+            button.textContent = name;
+            button.addEventListener('click', () => showReservationView(name));
+            classButtonContainer.appendChild(button);
+        });
+    }
+
+    // 2. 예약 화면 표시
+    function showReservationView(className) {
+        currentClass = className;
+        currentDay = dayNames[0]; // 기본으로 '월'요일 선택
+
+        classSelectionView.style.display = 'none';
+        reservationView.style.display = 'block';
+        reservationTitle.textContent = `${className} 상담 예약`;
+
+        generateDayTabs();
+        generateReservationTable();
+    }
+    
+    // '뒤로 가기' 기능
+    function showClassSelectionView() {
+        reservationView.style.display = 'none';
+        classSelectionView.style.display = 'block';
+    }
+
+    // 3. 요일 탭 생성
+    function generateDayTabs() {
+        dayTabsContainer.innerHTML = '';
+        dayNames.forEach(dayName => {
+            const tab = document.createElement('button');
+            tab.className = 'day-tab';
+            tab.textContent = dayName;
+            if (dayName === currentDay) {
+                tab.classList.add('active');
+            }
+            tab.addEventListener('click', () => {
+                currentDay = dayName;
+                // 모든 탭의 active 클래스 제거 후, 클릭된 탭에만 추가
+                document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                generateReservationTable(); // 테이블 다시 그리기
+            });
+            dayTabsContainer.appendChild(tab);
+        });
+    }
+
+    // 4. 예약 테이블 생성
+    function generateReservationTable() {
+        tableBody.innerHTML = '';
+
+        for (let time = startTime; time < endTime; time += interval) {
+            const row = document.createElement('tr');
+            const timeCell = document.createElement('td');
+            const statusCell = document.createElement('td');
+
+            const startHour = String(Math.floor(time / 60)).padStart(2, '0');
+            const startMinute = String(time % 60).padStart(2, '0');
+            const timeString = `${startHour}:${startMinute}`;
+
+            const endHour = String(Math.floor((time + interval) / 60)).padStart(2, '0');
+            const endMinute = String((time + interval) % 60).padStart(2, '0');
+            timeCell.textContent = `${timeString} - ${endHour}:${endMinute}`;
+
+            // 저장된 데이터 확인 후 상태 표시
+            const bookedName = reservationData[currentClass][currentDay][timeString];
+
+            if (bookedName) {
+                statusCell.textContent = `${bookedName} (예약 완료)`;
+                statusCell.classList.add('booked');
+            } else {
+                statusCell.textContent = '예약하기';
+                statusCell.classList.add('time-slot');
+                statusCell.addEventListener('click', () => bookSlot(timeString, statusCell));
+            }
+
+            row.appendChild(timeCell);
+            row.appendChild(statusCell);
+            tableBody.appendChild(row);
+        }
+    }
+
+    // 5. 예약 기능
+    function bookSlot(timeString, cell) {
+        const name = prompt('예약자 성함을 입력해주세요:');
+        if (name) {
+            // 데이터 객체에 예약 정보 저장
+            reservationData[currentClass][currentDay][timeString] = name;
+            
+            // 화면 업데이트
+            cell.textContent = `${name} (예약 완료)`;
+            cell.classList.remove('time-slot');
+            cell.classList.add('booked');
+            cell.replaceWith(cell.cloneNode(true)); // 이벤트 리스너 제거
+        }
+    }
+
+    // 이벤트 리스너 연결 및 초기화
+    backButton.addEventListener('click', showClassSelectionView);
+    initializeData();
+    initializeClassSelection();
+});
+</script>
+
+</body>
+</html>
