@@ -3,135 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>반별/요일별 상담 예약</title>
+    <title>반별/요일별 상담 예약 (Firebase 연동)</title>
+    <!-- 1. Firebase 라이브러리 추가 -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
     <style>
-        body {
-            font-family: 'Malgun Gothic', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #f4f4f4;
-        }
-        .container {
-            width: 90%;
-            max-width: 550px;
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-        }
-        h1, h2 {
-            text-align: center;
-            color: #333;
-        }
-
-        /* 1. 반 선택 화면 */
-        #class-selection-view {
-            text-align: center;
-        }
-        .class-button-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .class-btn {
-            padding: 20px;
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #fff;
-            background-color: #007bff;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .class-btn:hover {
-            background-color: #0056b3;
-        }
-
-        /* 2. 예약 화면 */
-        #reservation-view {
-            display: none;
-        }
-        #back-btn {
-            padding: 8px 15px;
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-bottom: 20px;
-        }
-        #back-btn:hover {
-            background-color: #5a6268;
-        }
-
-        /* 요일 탭 스타일 */
-        .day-tabs {
-            display: flex;
-            justify-content: space-around;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #dee2e6;
-        }
-        .day-tab {
-            padding: 10px 15px;
-            font-size: 1.1em;
-            font-weight: bold;
-            border: none;
-            background: none;
-            cursor: pointer;
-            color: #495057;
-            border-bottom: 2px solid transparent;
-        }
-        .day-tab.active {
-            color: #007bff;
-            border-bottom-color: #007bff;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        th, td {
-            padding: 12px;
-            border: 1px solid #ddd;
-            text-align: center;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        .time-slot {
-            cursor: pointer;
-            background-color: #e7f3ff;
-            color: #0056b3;
-            font-weight: bold;
-        }
-        .time-slot:hover {
-            background-color: #d0e7ff;
-        }
-        .booked {
-            background-color: #e9ecef;
-            color: #6c757d;
-            cursor: not-allowed;
-            font-weight: normal;
-        }
+        /* CSS 스타일은 이전과 동일합니다. */
+        body { font-family: 'Malgun Gothic', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f4f4f4; }
+        .container { width: 90%; max-width: 550px; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); }
+        h1, h2 { text-align: center; color: #333; }
+        #class-selection-view { text-align: center; }
+        .class-button-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .class-btn { padding: 20px; font-size: 1.2em; font-weight: bold; color: #fff; background-color: #007bff; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; }
+        .class-btn:hover { background-color: #0056b3; }
+        #reservation-view { display: none; }
+        #back-btn { padding: 8px 15px; background-color: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 20px; }
+        #back-btn:hover { background-color: #5a6268; }
+        .day-tabs { display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 2px solid #dee2e6; }
+        .day-tab { padding: 10px 15px; font-size: 1.1em; font-weight: bold; border: none; background: none; cursor: pointer; color: #495057; border-bottom: 2px solid transparent; }
+        .day-tab.active { color: #007bff; border-bottom-color: #007bff; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: center; }
+        th { background-color: #f2f2f2; }
+        .time-slot { cursor: pointer; background-color: #e7f3ff; color: #0056b3; font-weight: bold; }
+        .time-slot:hover { background-color: #d0e7ff; }
+        .booked { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; font-weight: normal; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- 1. 반 선택 화면 -->
     <div id="class-selection-view">
         <h1>상담 예약</h1>
         <h2>상담을 원하는 반을 선택해주세요.</h2>
         <div class="class-button-container" id="class-buttons"></div>
     </div>
-
-    <!-- 2. 예약 테이블 화면 -->
     <div id="reservation-view">
         <button id="back-btn">&larr; 반 선택 화면으로</button>
         <h2 id="reservation-title"></h2>
@@ -150,7 +57,24 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // DOM 요소
+    // 2. Firebase 초기화
+    // =================================================================
+    // 여기에 아까 Firebase 콘솔에서 복사한 firebaseConfig 코드를 붙여넣으세요!
+    const firebaseConfig = {
+        apiKey: "AIzaSyAYAWnTBTIa4aEsNFrKhRicSfLz9wv58Ew",
+        authDomain: "bcs-parent-teacher-conference.firebaseapp.com",
+        projectId: "bcs-parent-teacher-conference",
+        storageBucket: "bcs-parent-teacher-conference.firebasestorage.app",
+        messagingSenderId: "265252330101",
+        appId: "1:265252330101:web:749b8ee8ab9de7d102363c"
+    };
+    // =================================================================
+
+    // Firebase 앱 초기화 및 Firestore 인스턴스 생성
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // 기존 DOM 요소 및 설정은 동일
     const classSelectionView = document.getElementById('class-selection-view');
     const reservationView = document.getElementById('reservation-view');
     const classButtonContainer = document.getElementById('class-buttons');
@@ -159,29 +83,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const tableBody = document.querySelector('#reservation-table tbody');
     const backButton = document.getElementById('back-btn');
 
-    // 데이터 및 설정
     const classNames = ["희락반", "자비반", "양선반", "충성반", "온유반", "은혜반"];
     const dayNames = ["월", "화", "수", "목", "금"];
     const startTime = 17 * 60;
     const endTime = 20 * 60;
     const interval = 30;
-
-    // 전체 예약 데이터를 저장할 객체
-    let reservationData = {};
+    
     let currentClass = '';
     let currentDay = '';
 
-    // 데이터 구조 초기화
-    function initializeData() {
-        classNames.forEach(className => {
-            reservationData[className] = {};
-            dayNames.forEach(dayName => {
-                reservationData[className][dayName] = {};
-            });
-        });
-    }
-
-    // 1. 초기 화면 설정
+    // 초기 화면 설정 (변경 없음)
     function initializeClassSelection() {
         classNames.forEach(name => {
             const button = document.createElement('button');
@@ -192,49 +103,52 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 2. 예약 화면 표시
+    // 예약 화면 표시 (변경 없음)
     function showReservationView(className) {
         currentClass = className;
-        currentDay = dayNames[0]; // 기본으로 '월'요일 선택
-
+        currentDay = dayNames[0];
         classSelectionView.style.display = 'none';
         reservationView.style.display = 'block';
         reservationTitle.textContent = `${className} 상담 예약`;
-
         generateDayTabs();
         generateReservationTable();
     }
     
-    // '뒤로 가기' 기능
+    // 뒤로 가기 (변경 없음)
     function showClassSelectionView() {
         reservationView.style.display = 'none';
         classSelectionView.style.display = 'block';
     }
 
-    // 3. 요일 탭 생성
+    // 요일 탭 생성 (변경 없음)
     function generateDayTabs() {
         dayTabsContainer.innerHTML = '';
         dayNames.forEach(dayName => {
             const tab = document.createElement('button');
             tab.className = 'day-tab';
             tab.textContent = dayName;
-            if (dayName === currentDay) {
-                tab.classList.add('active');
-            }
+            if (dayName === currentDay) tab.classList.add('active');
             tab.addEventListener('click', () => {
                 currentDay = dayName;
-                // 모든 탭의 active 클래스 제거 후, 클릭된 탭에만 추가
                 document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
-                generateReservationTable(); // 테이블 다시 그리기
+                generateReservationTable();
             });
             dayTabsContainer.appendChild(tab);
         });
     }
 
-    // 4. 예약 테이블 생성
-    function generateReservationTable() {
-        tableBody.innerHTML = '';
+    // 3. 예약 테이블 생성 (Firebase 연동으로 로직 수정)
+    async function generateReservationTable() {
+        tableBody.innerHTML = '<tr><td colspan="2">예약 정보를 불러오는 중...</td></tr>';
+
+        // Firestore에서 현재 반과 요일에 해당하는 예약 데이터를 가져옴
+        const docId = `${currentClass}_${currentDay}`;
+        const docRef = db.collection("reservations").doc(docId);
+        const docSnap = await docRef.get();
+        const reservationData = docSnap.exists ? docSnap.data() : {};
+
+        tableBody.innerHTML = ''; // 로딩 메시지 제거
 
         for (let time = startTime; time < endTime; time += interval) {
             const row = document.createElement('tr');
@@ -249,8 +163,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const endMinute = String((time + interval) % 60).padStart(2, '0');
             timeCell.textContent = `${timeString} - ${endHour}:${endMinute}`;
 
-            // 저장된 데이터 확인 후 상태 표시
-            const bookedName = reservationData[currentClass][currentDay][timeString];
+            const bookedName = reservationData[timeString];
 
             if (bookedName) {
                 statusCell.textContent = `${bookedName} (예약 완료)`;
@@ -258,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 statusCell.textContent = '예약하기';
                 statusCell.classList.add('time-slot');
-                statusCell.addEventListener('click', () => bookSlot(timeString, statusCell));
+                statusCell.addEventListener('click', () => bookSlot(timeString));
             }
 
             row.appendChild(timeCell);
@@ -267,24 +180,30 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // 5. 예약 기능
-    function bookSlot(timeString, cell) {
+    // 4. 예약 기능 (Firebase 연동으로 로직 수정)
+    async function bookSlot(timeString) {
         const name = prompt('예약자 성함을 입력해주세요:');
         if (name) {
-            // 데이터 객체에 예약 정보 저장
-            reservationData[currentClass][currentDay][timeString] = name;
-            
-            // 화면 업데이트
-            cell.textContent = `${name} (예약 완료)`;
-            cell.classList.remove('time-slot');
-            cell.classList.add('booked');
-            cell.replaceWith(cell.cloneNode(true)); // 이벤트 리스너 제거
+            const docId = `${currentClass}_${currentDay}`;
+            const docRef = db.collection("reservations").doc(docId);
+
+            try {
+                // Firestore에 데이터 저장. { merge: true }는 다른 시간대 예약을 덮어쓰지 않게 함
+                await docRef.set({
+                    [timeString]: name
+                }, { merge: true });
+
+                alert('예약이 완료되었습니다.');
+                generateReservationTable(); // 예약 후 테이블을 다시 그려서 화면을 갱신
+            } catch (error) {
+                console.error("예약 중 오류 발생: ", error);
+                alert("오류가 발생하여 예약에 실패했습니다. 다시 시도해주세요.");
+            }
         }
     }
 
     // 이벤트 리스너 연결 및 초기화
     backButton.addEventListener('click', showClassSelectionView);
-    initializeData();
     initializeClassSelection();
 });
 </script>
