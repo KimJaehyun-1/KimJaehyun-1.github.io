@@ -18,12 +18,11 @@
         .form-group { margin-bottom: 20px; text-align: left; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         .form-group select { width: 100%; padding: 12px; font-size: 1em; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        #enter-btn { width: 100%; padding: 15px; font-size: 1.1em; font-weight: bold; color: white; background-color: #007bff; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s; }
-        #enter-btn:hover { background-color: #0056b3; }
+        #enter-btn { width: 100%; padding: 15px; font-size: 1.1em; font-weight: bold; color: white; background-color: #007bff; border: none; border-radius: 5px; cursor: pointer; }
         #enter-btn:disabled { background-color: #a0a0a0; cursor: not-allowed; }
-        #student-form-group { display: none; } /* 학생 선택은 처음엔 숨김 */
+        #student-form-group { display: none; }
 
-        /* ======== 2. 예약 화면 스타일 (이전과 동일) ======== */
+        /* ======== 2. 예약 화면 스타일 ======== */
         #reservation-view { display: none; }
         #back-btn { padding: 8px 15px; background-color: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 20px; }
         .day-tabs { display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 2px solid #dee2e6; }
@@ -31,40 +30,41 @@
         .day-tab.active { color: #007bff; border-bottom: 2px solid #007bff; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { padding: 12px; border: 1px solid #ddd; text-align: center; }
-        th { background-color: #f2f2f2; }
         .time-slot { cursor: pointer; background-color: #e7f3ff; color: #0056b3; font-weight: bold; }
         .booked { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; }
         .cancel-btn { padding: 8px 12px; font-size: 0.9em; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; }
+
+        /* ======== 3. 정보 안내 모달 스타일 (신규 추가) ======== */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-box { background: #fff; padding: 25px; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; }
+        .modal-box h3 { margin-top: 0; margin-bottom: 10px; }
+        .modal-box p { margin-bottom: 25px; font-size: 1.1em; }
+        .modal-btn { padding: 10px 25px; border: none; border-radius: 5px; font-size: 1em; cursor: pointer; background-color: #007bff; color: white; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- ======== 1. 시작 화면 ======== -->
     <div id="login-view">
         <h1>상담 예약</h1>
-        <div class="form-group">
-            <label for="class-select">1. 반을 선택하세요</label>
-            <select id="class-select">
-                <option value="">-- 반 선택 --</option>
-            </select>
-        </div>
-        <div class="form-group" id="student-form-group">
-            <label for="student-select">2. 이름을 선택하세요</label>
-            <select id="student-select"></select>
-        </div>
+        <div class="form-group"><label for="class-select">1. 반을 선택하세요</label><select id="class-select"><option value="">-- 반 선택 --</option></select></div>
+        <div class="form-group" id="student-form-group"><label for="student-select">2. 이름을 선택하세요</label><select id="student-select"></select></div>
         <button id="enter-btn" disabled>예약 페이지로 이동</button>
     </div>
-
-    <!-- ======== 2. 예약 화면 ======== -->
     <div id="reservation-view">
         <button id="back-btn">&larr; 처음으로</button>
         <h2 id="reservation-title"></h2>
         <div class="day-tabs" id="day-tabs-container"></div>
-        <table id="reservation-table">
-            <thead><tr><th>시간</th><th>예약 상태</th></tr></thead>
-            <tbody></tbody>
-        </table>
+        <table id="reservation-table"><thead><tr><th>시간</th><th>예약 상태</th></tr></thead><tbody></tbody></table>
+    </div>
+</div>
+
+<!-- ======== 정보 안내 모달 HTML (신규 추가) ======== -->
+<div class="modal-overlay" id="info-modal">
+    <div class="modal-box">
+        <h3>알림</h3>
+        <p id="info-modal-message"></p>
+        <button class="modal-btn" id="info-modal-close-btn">확인</button>
     </div>
 </div>
 
@@ -72,7 +72,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const firebaseConfig = {
-      apiKey: "AIzaSyAYAWnTBTIa4aEsNFrKhRicSfLz9wv58Ew",
+        apiKey: "AIzaSyAYAWnTBTIa4aEsNFrKhRicSfLz9wv58Ew",
         authDomain: "bcs-parent-teacher-conference.firebaseapp.com",
         projectId: "bcs-parent-teacher-conference",
         storageBucket: "bcs-parent-teacher-conference.firebasestorage.app",
@@ -82,8 +82,6 @@ document.addEventListener('DOMContentLoaded', function () {
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // =======================================================
-    // ▼▼▼ 이 부분에 실제 반과 학생 명단을 기입하시면 됩니다 ▼▼▼
     const studentData = {
       "희락반": ["김하선", "노주하", "배라임", "안시아", "안시완", "오하린", "이주혜", "이은혜", "이하은", "정은유", "황찬유"],
       "자비반": ["김성찬", "김주원", "김준호", "김이언", "방예인", "배하임", "성제호", "오하엘", "이재이", "이재인", "최연준", "허재인"],
@@ -92,143 +90,60 @@ document.addEventListener('DOMContentLoaded', function () {
       "온유반": ["고준", "김다은", "김민서", "김하람", "박천우", "안지후", "이청음", "장서진", "한담이", "홍성민"],
       "은혜반": ["김민주", "김시영", "김태린", "김하윤", "김하음", "양예린", "양예은", "장서연", "정민석", "한준경"]
     };
-    // ▲▲▲ 여기까지 수정하시면 됩니다 ▲▲▲
-    // =======================================================
 
     // DOM 요소
-    const loginView = document.getElementById('login-view');
-    const reservationView = document.getElementById('reservation-view');
-    const classSelect = document.getElementById('class-select');
-    const studentFormGroup = document.getElementById('student-form-group');
-    const studentSelect = document.getElementById('student-select');
-    const enterBtn = document.getElementById('enter-btn');
-    const backButton = document.getElementById('back-btn');
-    const reservationTitle = document.getElementById('reservation-title');
-    const dayTabsContainer = document.getElementById('day-tabs-container');
-    const tableBody = document.querySelector('#reservation-table tbody');
+    const loginView = document.getElementById('login-view'), reservationView = document.getElementById('reservation-view');
+    const classSelect = document.getElementById('class-select'), studentFormGroup = document.getElementById('student-form-group'), studentSelect = document.getElementById('student-select');
+    const enterBtn = document.getElementById('enter-btn'), backButton = document.getElementById('back-btn');
+    const reservationTitle = document.getElementById('reservation-title'), dayTabsContainer = document.getElementById('day-tabs-container'), tableBody = document.querySelector('#reservation-table tbody');
+    
+    // 신규 모달 요소
+    const infoModal = document.getElementById('info-modal');
+    const infoModalMessage = document.getElementById('info-modal-message');
+    const infoModalCloseBtn = document.getElementById('info-modal-close-btn');
 
-    // 데이터 및 설정
     const dayNames = ["월", "화", "수", "목", "금"];
     const startTime = 17 * 60, endTime = 20 * 60, interval = 30;
-    
     let currentUserName = '', currentClass = '', currentDay = '';
 
-    // 1. 시작 화면 초기화
-    function initializeLoginView() {
-        // 반 드롭다운 채우기
-        Object.keys(studentData).forEach(className => {
-            const option = new Option(className, className);
-            classSelect.add(option);
-        });
+    // 정보 모달 닫기 이벤트
+    infoModalCloseBtn.addEventListener('click', () => infoModal.style.display = 'none');
 
-        // 반 선택 시 학생 드롭다운 업데이트
-        classSelect.addEventListener('change', () => {
-            const selectedClass = classSelect.value;
-            studentSelect.innerHTML = ''; // 학생 목록 초기화
-            enterBtn.disabled = true;
-
-            if (selectedClass) {
-                studentFormGroup.style.display = 'block';
-                const students = studentData[selectedClass];
-                studentSelect.add(new Option('-- 이름 선택 --', ''));
-                students.forEach(studentName => {
-                    studentSelect.add(new Option(studentName, studentName));
-                });
-            } else {
-                studentFormGroup.style.display = 'none';
-            }
-        });
-        
-        // 학생 선택 시 '들어가기' 버튼 활성화
-        studentSelect.addEventListener('change', () => {
-            enterBtn.disabled = !studentSelect.value;
-        });
-
-        // '들어가기' 버튼 이벤트
-        enterBtn.addEventListener('click', () => {
-            currentClass = classSelect.value;
-            currentUserName = studentSelect.value;
-            showReservationView();
-        });
-        
-        // '처음으로' 버튼 이벤트
-        backButton.addEventListener('click', showLoginView);
-    }
-
-    // 2. 예약 화면 표시
-    function showReservationView() {
-        currentDay = dayNames[0];
-        loginView.style.display = 'none';
-        reservationView.style.display = 'block';
-        reservationTitle.textContent = `${currentClass} / ${currentUserName}님`;
-        generateDayTabs();
-        generateReservationTable();
+    // 정보 모달 표시 함수 (신규 추가)
+    function showInfoModal(message) {
+        infoModalMessage.textContent = message;
+        infoModal.style.display = 'flex';
     }
     
-    // 3. 시작 화면으로 돌아가기
-    function showLoginView() {
-        reservationView.style.display = 'none';
-        loginView.style.display = 'block';
-        // 선택 상태 초기화
-        classSelect.value = '';
-        studentFormGroup.style.display = 'none';
-        studentSelect.innerHTML = '';
-        enterBtn.disabled = true;
-    }
-
-    // ... 이하 예약 관련 함수들은 이전과 거의 동일 ...
-
-    function generateDayTabs() {
-        dayTabsContainer.innerHTML = '';
-        dayNames.forEach(dayName => {
-            const tab = document.createElement('button');
-            tab.className = 'day-tab';
-            tab.textContent = dayName;
-            if (dayName === currentDay) tab.classList.add('active');
-            tab.addEventListener('click', () => {
-                currentDay = dayName;
-                document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                generateReservationTable();
-            });
-            dayTabsContainer.appendChild(tab);
-        });
-    }
-
-    async function generateReservationTable() {
-        tableBody.innerHTML = '<tr><td colspan="2">예약 정보를 불러오는 중...</td></tr>';
-        const docId = `${currentClass}_${currentDay}`;
-        const docRef = db.collection("reservations").doc(docId);
-        const docSnap = await docRef.get();
-        const reservationData = docSnap.exists ? docSnap.data() : {};
-        tableBody.innerHTML = '';
-
-        for (let time = startTime; time < endTime; time += interval) {
-            const row = document.createElement('tr');
-            const timeCell = document.createElement('td');
-            const statusCell = document.createElement('td');
-            const timeString = `${String(Math.floor(time/60)).padStart(2,'0')}:${String(time%60).padStart(2,'0')}`;
-            timeCell.textContent = `${timeString} - ${String(Math.floor((time+interval)/60)).padStart(2,'0')}:${String((time+interval)%60).padStart(2,'0')}`;
-            const bookedName = reservationData[timeString];
-
-            if (bookedName) {
-                if (bookedName === currentUserName) {
-                    statusCell.innerHTML = `(본인 예약) <button class="cancel-btn">취소하기</button>`;
-                    statusCell.querySelector('.cancel-btn').addEventListener('click', () => cancelBooking(timeString));
-                } else {
-                    statusCell.textContent = `${bookedName} (예약 완료)`;
-                    statusCell.classList.add('booked');
+    // 예약 전 중복 체크 함수 (신규 추가)
+    async function checkForExistingBooking(userName, className) {
+        for (const day of dayNames) {
+            const docId = `${className}_${day}`;
+            const docRef = db.collection("reservations").doc(docId);
+            const docSnap = await docRef.get();
+            if (docSnap.exists) {
+                const reservationData = docSnap.data();
+                for (const time in reservationData) {
+                    if (reservationData[time] === userName) {
+                        return { day: day, time: time }; // 기존 예약 정보 반환
+                    }
                 }
-            } else {
-                statusCell.textContent = '예약하기';
-                statusCell.classList.add('time-slot');
-                statusCell.addEventListener('click', () => bookSlot(timeString));
             }
-            row.appendChild(timeCell); row.appendChild(statusCell); tableBody.appendChild(row);
         }
+        return null; // 기존 예약 없음
     }
 
+    // 예약 기능 (중복 체크 로직 추가)
     async function bookSlot(timeString) {
+        // 1. 예약 전 모든 요일에 대해 중복 예약이 있는지 확인
+        const existingBooking = await checkForExistingBooking(currentUserName, currentClass);
+        if (existingBooking) {
+            const message = `이미 예약된 시간이 있습니다.\n${existingBooking.day}요일, ${existingBooking.time}`;
+            showInfoModal(message);
+            return; // 예약 절차 중단
+        }
+
+        // 2. 중복이 없으면 예약 진행
         const name = currentUserName;
         const docId = `${currentClass}_${currentDay}`;
         const docRef = db.collection("reservations").doc(docId);
@@ -238,20 +153,12 @@ document.addEventListener('DOMContentLoaded', function () {
             generateReservationTable();
         } catch (error) { console.error("예약 오류: ", error); alert("예약에 실패했습니다."); }
     }
-    
-    async function cancelBooking(timeString) {
-        if (!confirm('정말로 이 예약을 취소하시겠습니까?')) return;
-        const docId = `${currentClass}_${currentDay}`;
-        const docRef = db.collection("reservations").doc(docId);
-        const FieldValue = firebase.firestore.FieldValue;
-        try {
-            await docRef.update({ [timeString]: FieldValue.delete() });
-            alert('예약이 취소되었습니다.');
-            generateReservationTable();
-        } catch (error) { console.error("예약 취소 오류: ", error); alert("예약 취소에 실패했습니다."); }
-    }
-
-    // 페이지 로드 시 시작 화면 초기화
+    function initializeLoginView() { Object.keys(studentData).forEach(className => classSelect.add(new Option(className, className))); classSelect.addEventListener('change', () => { const selectedClass = classSelect.value; studentSelect.innerHTML = ''; enterBtn.disabled = true; if (selectedClass) { studentFormGroup.style.display = 'block'; const students = studentData[selectedClass]; studentSelect.add(new Option('-- 이름 선택 --', '')); students.forEach(studentName => studentSelect.add(new Option(studentName, studentName))); } else { studentFormGroup.style.display = 'none'; } }); studentSelect.addEventListener('change', () => { enterBtn.disabled = !studentSelect.value; }); enterBtn.addEventListener('click', () => { currentClass = classSelect.value; currentUserName = studentSelect.value; showReservationView(); }); backButton.addEventListener('click', showLoginView); }
+    function showReservationView() { currentDay = dayNames[0]; loginView.style.display = 'none'; reservationView.style.display = 'block'; reservationTitle.textContent = `${currentClass} / ${currentUserName}님`; generateDayTabs(); generateReservationTable(); }
+    function showLoginView() { reservationView.style.display = 'none'; loginView.style.display = 'block'; classSelect.value = ''; studentFormGroup.style.display = 'none'; studentSelect.innerHTML = ''; enterBtn.disabled = true; }
+    function generateDayTabs() { dayTabsContainer.innerHTML = ''; dayNames.forEach(dayName => { const tab = document.createElement('button'); tab.className = 'day-tab'; tab.textContent = dayName; if (dayName === currentDay) tab.classList.add('active'); tab.addEventListener('click', () => { currentDay = dayName; document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); generateReservationTable(); }); dayTabsContainer.appendChild(tab); }); }
+    async function generateReservationTable() { tableBody.innerHTML = '<tr><td colspan="2">예약 정보를 불러오는 중...</td></tr>'; const docId = `${currentClass}_${currentDay}`; const docRef = db.collection("reservations").doc(docId); const docSnap = await docRef.get(); const reservationData = docSnap.exists ? docSnap.data() : {}; tableBody.innerHTML = ''; for (let time = startTime; time < endTime; time += interval) { const row = document.createElement('tr'); const timeCell = document.createElement('td'); const statusCell = document.createElement('td'); const timeString = `${String(Math.floor(time/60)).padStart(2,'0')}:${String(time%60).padStart(2,'0')}`; timeCell.textContent = `${timeString} - ${String(Math.floor((time+interval)/60)).padStart(2,'0')}:${String((time+interval)%60).padStart(2,'0')}`; const bookedName = reservationData[timeString]; if (bookedName) { if (bookedName === currentUserName) { statusCell.innerHTML = `(본인 예약) <button class="cancel-btn">취소하기</button>`; statusCell.querySelector('.cancel-btn').addEventListener('click', () => cancelBooking(timeString)); } else { statusCell.textContent = `${bookedName} (예약 완료)`; statusCell.classList.add('booked'); } } else { statusCell.textContent = '예약하기'; statusCell.classList.add('time-slot'); statusCell.addEventListener('click', () => bookSlot(timeString)); } row.appendChild(timeCell); row.appendChild(statusCell); tableBody.appendChild(row); } }
+    async function cancelBooking(timeString) { if (!confirm('정말로 이 예약을 취소하시겠습니까?')) return; const docId = `${currentClass}_${currentDay}`; const docRef = db.collection("reservations").doc(docId); const FieldValue = firebase.firestore.FieldValue; try { await docRef.update({ [timeString]: FieldValue.delete() }); alert('예약이 취소되었습니다.'); generateReservationTable(); } catch (error) { console.error("예약 취소 오류: ", error); alert("예약 취소에 실패했습니다."); } }
     initializeLoginView();
 });
 </script>
