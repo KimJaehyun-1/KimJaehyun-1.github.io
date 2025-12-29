@@ -114,14 +114,14 @@ document.addEventListener('DOMContentLoaded', function () {
       "희락반": ["김하선", "노주하", "배라임", "안시아", "안시완", "오하린", "이주혜", "이은혜", "이하은", "정은유", "황찬유"],
       "자비반": ["김성찬", "김주원", "김준호", "김이언", "방예인", "배하임", "성제호", "오하엘", "이재이", "이재인", "최연준", "허재인"],
       "양선반": ["김하준", "김하령", "신시온", "이요셉", "이재은", "전해인", "최연아", "한이음", "현승리", "홍수아"],
-      "충성반": ["김도연", "류근희", "성찬영", "신온유", "이요한", "이태훈", "전표인", "정지한"],
+      "충성반": ["김도연", "류근희", "성찬영", "신온유", "이태훈", "전표인", "정지한"],
       "온유반": ["고준", "김다은", "김민서", "김하람", "박천우", "안지후", "이청음", "장서진", "한담이", "홍성민"],
       "은혜반": ["김민주", "김시영", "김태린", "김하윤", "김하음", "양예린", "양예은", "장서연", "정민석", "한준경"]
     };
     
     // (이전과 동일한 DOM 요소 및 모달 로직...)
     const loginView = document.getElementById('login-view'), reservationView = document.getElementById('reservation-view'), classSelect = document.getElementById('class-select'), studentSelect = document.getElementById('student-select'), studentFormGroup = document.getElementById('student-form-group'), enterBtn = document.getElementById('enter-btn'), backButton = document.getElementById('back-btn'), reservationTitle = document.getElementById('reservation-title'), dayTabsContainer = document.getElementById('day-tabs-container'), tableBody = document.querySelector('#reservation-table tbody'), alertModal = document.getElementById('alert-modal'), alertModalMessage = document.getElementById('alert-modal-message'), alertModalCloseBtn = document.getElementById('alert-modal-close-btn'), confirmModal = document.getElementById('confirm-modal'), confirmModalMessage = document.getElementById('confirm-modal-message'), confirmYesBtn = document.getElementById('confirm-modal-yes-btn'), confirmNoBtn = document.getElementById('confirm-modal-no-btn');
-    const dayNames = ["월", "화", "수", "목", "금"], startTime = 17 * 60, endTime = 20 * 60, interval = 30;
+    const dayNames = ["월(1/19)", "화", "수", "목", "금"], startTime = 17 * 60, endTime = 20 * 60, interval = 30;
     let currentUserName = '', currentClass = '', currentDay = '', resolveConfirm;
     function showAlertModal(message) { alertModalMessage.textContent = message; alertModal.style.display = 'flex'; }
     alertModalCloseBtn.addEventListener('click', () => alertModal.style.display = 'none');
