@@ -36,22 +36,11 @@
         .reserve-btn { background-color: #007bff; }
         .cancel-btn { background-color: #dc3545; }
         #download-excel-btn, #download-all-classes-excel-btn { display: block; margin: 20px auto 0 auto; padding: 12px 25px; font-size: 1.1em; font-weight: bold; color: white; background-color: #28a745; border: none; border-radius: 5px; cursor: pointer; }
-        
-        /* ======== 전체 현황 테이블 스타일 (슬라이드 제거 및 크기 축소) ======== */
-        #all-overview-table { table-layout: fixed; } /* 테이블 레이아웃 고정 */
-        #all-overview-table th, #all-overview-table td {
-            border: 1px solid #ddd;
-            padding: 4px; /* 내부 여백 축소 */
-            text-align: center;
-            font-size: 0.75em; /* 글자 크기 축소 */
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        #all-overview-table { table-layout: fixed; }
+        #all-overview-table th, #all-overview-table td { border: 1px solid #ddd; padding: 5px 2px; text-align: center; font-size: 0.7em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #all-overview-table thead th { background-color: #e9ecef; font-weight: bold; }
-        #all-overview-table tbody th { background-color: #f8f9fa; font-weight: bold; }
+        #all-overview-table tbody th { background-color: #f8f9fa; font-weight: bold; font-size: 0.75em; }
         .day-divider { border-bottom: 3px solid #666; }
-        
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-box { background: #fff; padding: 25px; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; }
         .modal-box h3 { margin-top: 0; }
@@ -66,15 +55,10 @@
 
 <div class="container">
     <div id="login-view">
-        <div class="title-wrapper">
-            <h1>상담 예약</h1>
-            <button id="all-overview-btn">전체 현황 보기</button>
-        </div>
+        <div class="title-wrapper"><h1>상담 예약</h1><button id="all-overview-btn">전체 현황 보기</button></div>
         <div class="form-group"><label for="class-select">1. 반을 선택하세요</label><select id="class-select"><option value="">-- 반 선택 --</option></select></div>
         <div class="form-group" id="student-form-group"><label for="student-select">2. 이름을 선택하세요 (예약/취소 시)</label><select id="student-select"></select></div>
-        <div class="login-buttons">
-            <button id="enter-btn" class="login-btn" disabled>예약 페이지로 이동</button>
-        </div>
+        <div class="login-buttons"><button id="enter-btn" class="login-btn" disabled>예약 페이지로 이동</button></div>
     </div>
     <div id="reservation-view">
         <button class="back-btn">&larr; 처음으로</button><h2 id="reservation-title"></h2>
@@ -85,7 +69,6 @@
     <div id="all-overview-view">
         <button class="back-btn">&larr; 처음으로</button>
         <h2 id="all-overview-title">전체 반 상담 예약 현황</h2>
-        <!-- table-responsive-wrapper 제거 -->
         <table id="all-overview-table"><thead></thead><tbody></tbody></table>
         <button id="download-all-classes-excel-btn" class="login-btn" style="margin-top:20px;">전체 예약 현황 엑셀 다운로드</button>
     </div>
@@ -95,13 +78,13 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const firebaseConfig = { 
+    const firebaseConfig = {  
         apiKey: "AIzaSyAYAWnTBTIa4aEsNFrKhRicSfLz9wv58Ew",
         authDomain: "bcs-parent-teacher-conference.firebaseapp.com",
         projectId: "bcs-parent-teacher-conference",
         storageBucket: "bcs-parent-teacher-conference.firebasestorage.app",
         messagingSenderId: "265252330101",
-        appId: "1:265252330101:web:749b8ee8ab9de7d102363c"};
+        appId: "1:265252330101:web:749b8ee8ab9de7d102363c" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const studentData = {  
@@ -110,9 +93,13 @@ document.addEventListener('DOMContentLoaded', function () {
       "양선반": ["김하준", "김하령", "신시온", "이요셉", "이재은", "전해인", "최연아", "한이음", "현승리", "홍수아"],
       "충성반": ["김도연", "류근희", "성찬영", "신온유", "이태훈", "전표인", "정지한"],
       "온유반": ["고준", "김다은", "김민서", "김하람", "박천우", "안지후", "이청음", "장서진", "한담이", "홍성민"],
-      "은혜반": ["김민주", "김시영", "김태린", "김하윤", "김하음", "양예린", "양예은", "장서연", "정민석", "한준경"] };
+      "은혜반": ["김민주", "김시영", "김태린", "김하윤", "김하음", "양예린", "양예은", "장서연", "정민석", "한준경"]  };
+    
+    // ======== 날짜 정보 관리 (라벨 분리) ========
     const dayInfo = [
-      { key: "월", label: "월(1/19)" }, { key: "화", label: "화(1/20)" }, { key: "수", label: "수(1/21)" }
+      { key: "월", label: "월(1/19)", shortLabel: "월" },
+      { key: "화", label: "화(1/20)", shortLabel: "화" },
+      { key: "수", label: "수(1/21)", shortLabel: "수" }
     ];
     
     const loginView = document.getElementById('login-view'), reservationView = document.getElementById('reservation-view'), allOverviewView = document.getElementById('all-overview-view');
@@ -142,12 +129,66 @@ document.addEventListener('DOMContentLoaded', function () {
     function initializeLoginView() { Object.keys(studentData).forEach(name => classSelect.add(new Option(name, name))); classSelect.addEventListener('change', () => { const selectedClass = classSelect.value; studentSelect.innerHTML = ''; enterBtn.disabled = true; if (selectedClass) { studentFormGroup.style.display = 'block'; studentSelect.add(new Option('-- 이름 선택 --', '')); studentData[selectedClass].forEach(name => studentSelect.add(new Option(name, name))); } else { studentFormGroup.style.display = 'none'; } }); studentSelect.addEventListener('change', () => { enterBtn.disabled = !studentSelect.value; }); enterBtn.addEventListener('click', () => { currentClass = classSelect.value; currentUserName = studentSelect.value; showReservationView(); }); allOverviewBtn.addEventListener('click', showAllOverviewView); backBtns.forEach(btn => btn.addEventListener('click', showLoginView)); }
     async function showAllOverviewView() { loginView.style.display = 'none'; reservationView.style.display = 'none'; allOverviewView.style.display = 'block'; await generateAllClassesOverviewTable(); }
     function showLoginView() { reservationView.style.display = 'none'; allOverviewView.style.display = 'none'; loginView.style.display = 'block'; classSelect.value = ''; studentFormGroup.style.display = 'none'; studentSelect.innerHTML = ''; enterBtn.disabled = true; }
-    async function generateAllClassesOverviewTable() { allOverviewTableHead.innerHTML = '<tr><th>로딩 중...</th></tr>'; allOverviewTableBody.innerHTML = ''; const allClassNames = Object.keys(studentData); const timeSlots = []; for (let time = startTime; time < endTime; time += interval) { timeSlots.push(`${String(Math.floor(time/60)).padStart(2,'0')}:${String(time%60).padStart(2,'0')}`); } let allReservations = {}; for (const className of allClassNames) { allReservations[className] = {}; for (const day of dayInfo) { const docRef = db.collection("reservations").doc(`${className}_${day.key}`); const docSnap = await docRef.get(); allReservations[className][day.key] = docSnap.exists ? docSnap.data() : {}; } } allOverviewTableHead.innerHTML = ''; const headerRow = document.createElement('tr'); headerRow.innerHTML = '<th>요일/시간</th>'; allClassNames.forEach(className => { headerRow.innerHTML += `<th>${className}</th>`; }); allOverviewTableHead.appendChild(headerRow); allOverviewTableBody.innerHTML = ''; dayInfo.forEach(day => { timeSlots.forEach((timeString, index) => { const bodyRow = document.createElement('tr'); bodyRow.innerHTML = `<th>${day.label} ${timeString}</th>`; allClassNames.forEach(className => { const studentName = allReservations[className][day.key][timeString] || ''; bodyRow.innerHTML += `<td>${studentName}</td>`; }); if (index === timeSlots.length - 1) { bodyRow.classList.add('day-divider'); } allOverviewTableBody.appendChild(bodyRow); }); }); }
+    
+    // ======== 전체 반 현황 테이블 생성 함수 (shortLabel 사용) ========
+    async function generateAllClassesOverviewTable() {
+        allOverviewTableHead.innerHTML = '<tr><th>로딩 중...</th></tr>';
+        allOverviewTableBody.innerHTML = '';
+        const allClassNames = Object.keys(studentData);
+        const timeSlots = [];
+        for (let time = startTime; time < endTime; time += interval) { timeSlots.push(`${String(Math.floor(time/60)).padStart(2,'0')}:${String(time%60).padStart(2,'0')}`); }
+        let allReservations = {};
+        for (const className of allClassNames) {
+            allReservations[className] = {};
+            for (const day of dayInfo) {
+                const docRef = db.collection("reservations").doc(`${className}_${day.key}`);
+                const docSnap = await docRef.get();
+                allReservations[className][day.key] = docSnap.exists ? docSnap.data() : {};
+            }
+        }
+        allOverviewTableHead.innerHTML = '';
+        const headerRow = document.createElement('tr');
+        headerRow.innerHTML = '<th>시간</th>';
+        allClassNames.forEach(className => { headerRow.innerHTML += `<th>${className}</th>`; });
+        allOverviewTableHead.appendChild(headerRow);
+        allOverviewTableBody.innerHTML = '';
+        dayInfo.forEach(day => {
+            const dayTitleRow = document.createElement('tr');
+            // 전체 현황에서는 shortLabel 사용
+            dayTitleRow.innerHTML = `<th colspan="${allClassNames.length + 1}" style="background-color: #e9ecef;">${day.shortLabel}요일</th>`;
+            allOverviewTableBody.appendChild(dayTitleRow);
+
+            timeSlots.forEach((timeString, index) => {
+                const bodyRow = document.createElement('tr');
+                bodyRow.innerHTML = `<th>${timeString}</th>`;
+                allClassNames.forEach(className => {
+                    const studentName = allReservations[className][day.key][timeString] || '';
+                    bodyRow.innerHTML += `<td>${studentName}</td>`;
+                });
+                allOverviewTableBody.appendChild(bodyRow);
+            });
+        });
+    }
+
     async function checkForExistingBooking(userName, className) { for (const day of dayInfo) { const docRef = db.collection("reservations").doc(`${className}_${day.key}`); const docSnap = await docRef.get(); if (docSnap.exists) { const data = docSnap.data(); for (const time in data) { if (data[time] === userName) return { day: day.label, time: time }; } } } return null; }
     async function bookSlot(timeString) { const existingBooking = await checkForExistingBooking(currentUserName, currentClass); if (existingBooking) { showAlertModal(`이미 예약된 시간이 있습니다.\n${existingBooking.day}, ${existingBooking.time}`); return; } const docRef = db.collection("reservations").doc(`${currentClass}_${currentDay}`); try { await docRef.set({ [timeString]: currentUserName }, { merge: true }); showAlertModal('예약이 완료되었습니다.'); generateReservationTable(); } catch (error) { console.error("예약 오류: ", error); showAlertModal("오류가 발생하여 예약에 실패했습니다."); } }
     async function cancelBooking(timeString) { const confirmed = await showConfirmModal('정말로 이 예약을 취소하시겠습니까?'); if (!confirmed) return; const docRef = db.collection("reservations").doc(`${currentClass}_${currentDay}`); const FieldValue = firebase.firestore.FieldValue; try { await docRef.update({ [timeString]: FieldValue.delete() }); showAlertModal('예약이 취소되었습니다.'); generateReservationTable(); } catch (error) { console.error("예약 취소 오류: ", error); showAlertModal("예약 취소에 실패했습니다."); } }
     function showReservationView() { currentDay = dayInfo[0].key; loginView.style.display = 'none'; allOverviewView.style.display = 'none'; reservationView.style.display = 'block'; reservationTitle.textContent = `${currentClass} / ${currentUserName}님`; generateDayTabs(); generateReservationTable(); }
-    function generateDayTabs() { dayTabsContainer.innerHTML = ''; dayInfo.forEach(day => { const tab = document.createElement('button'); tab.className = 'day-tab'; tab.textContent = day.label; if (day.key === currentDay) tab.classList.add('active'); tab.addEventListener('click', () => { currentDay = day.key; document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); generateReservationTable(); }); dayTabsContainer.appendChild(tab); }); }
+    
+    // ======== 요일 탭 생성 함수 (label 사용) ========
+    function generateDayTabs() {
+        dayTabsContainer.innerHTML = '';
+        dayInfo.forEach(day => {
+            const tab = document.createElement('button');
+            tab.className = 'day-tab';
+            // 예약 화면에서는 전체 라벨(label) 사용
+            tab.textContent = day.label; 
+            if (day.key === currentDay) tab.classList.add('active');
+            tab.addEventListener('click', () => { currentDay = day.key; document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); generateReservationTable(); });
+            dayTabsContainer.appendChild(tab);
+        });
+    }
+
     async function generateReservationTable() { tableBody.innerHTML = '<tr><td colspan="2">예약 정보를 불러오는 중...</td></tr>'; const docRef = db.collection("reservations").doc(`${currentClass}_${currentDay}`); const docSnap = await docRef.get(); const reservationData = docSnap.exists ? docSnap.data() : {}; tableBody.innerHTML = ''; for (let time = startTime; time < endTime; time += interval) { const row = document.createElement('tr'); const timeCell = document.createElement('td'); const statusCell = document.createElement('td'); const timeString = `${String(Math.floor(time/60)).padStart(2,'0')}:${String(time%60).padStart(2,'0')}`; timeCell.textContent = `${timeString} - ${String(Math.floor((time+interval)/60)).padStart(2,'0')}:${String((time+interval)%60).padStart(2,'0')}`; const bookedName = reservationData[timeString]; if (bookedName) { if (bookedName === currentUserName) { statusCell.innerHTML = `(본인 예약) <button class="cancel-btn">취소하기</button>`; statusCell.querySelector('.cancel-btn').addEventListener('click', () => cancelBooking(timeString)); } else { statusCell.textContent = `${bookedName} (예약 완료)`; statusCell.classList.add('booked'); } } else { statusCell.innerHTML = `<button class="reserve-btn">예약하기</button>`; statusCell.querySelector('.reserve-btn').addEventListener('click', () => bookSlot(timeString)); } row.appendChild(timeCell); row.appendChild(statusCell); tableBody.appendChild(row); } }
     
     initializeLoginView();
