@@ -12,29 +12,11 @@
         body { font-family: 'Malgun Gothic', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f4f4f4; }
         .container { width: 90%; max-width: 800px; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); }
         h1, h2 { text-align: center; color: #333; }
-
-        /* ======== 1. 시작 화면 ======== */
         #login-view { text-align: center; }
-        .title-wrapper {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
+        .title-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .title-wrapper h1 { margin: 0; text-align: left; }
-        #all-overview-btn {
-            padding: 8px 16px;
-            font-size: 0.9em;
-            font-weight: bold;
-            color: white;
-            background-color: #007bff; /* 파란색으로 변경 */
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            flex-shrink: 0;
-        }
-        #all-overview-btn:hover { background-color: #0056b3; } /* Hover 색상 변경 */
+        #all-overview-btn { padding: 8px 16px; font-size: 0.9em; font-weight: bold; color: white; background-color: #007bff; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; flex-shrink: 0; }
+        #all-overview-btn:hover { background-color: #0056b3; }
         .form-group { margin-bottom: 20px; text-align: left; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         .form-group select { width: 100%; padding: 12px; font-size: 1em; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
@@ -42,11 +24,8 @@
         #enter-btn { width: 100%; padding: 15px; font-size: 1.1em; font-weight: bold; color: white; background-color: #007bff; border: none; border-radius: 5px; cursor: pointer; }
         #enter-btn:disabled { background-color: #a0a0a0; cursor: not-allowed; }
         #student-form-group { display: none; }
-
-        /* 2. 예약 화면 & 3. 전체 현황 화면 */
         #reservation-view, #all-overview-view { display: none; }
         .back-btn { padding: 8px 15px; background-color: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 20px; }
-        
         .day-tabs { display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 2px solid #dee2e6; }
         .day-tab { padding: 10px 15px; font-size: 1.1em; font-weight: bold; border: none; background: none; cursor: pointer; color: #495057; }
         .day-tab.active { color: #007bff; border-bottom: 2px solid #007bff; }
@@ -57,12 +36,22 @@
         .reserve-btn { background-color: #007bff; }
         .cancel-btn { background-color: #dc3545; }
         #download-excel-btn, #download-all-classes-excel-btn { display: block; margin: 20px auto 0 auto; padding: 12px 25px; font-size: 1.1em; font-weight: bold; color: white; background-color: #28a745; border: none; border-radius: 5px; cursor: pointer; }
-        #all-overview-table th, #all-overview-table td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 0.85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        #all-overview-table thead th { background-color: #e9ecef; font-weight: bold; }
-        #all-overview-table tbody th { background-color: #f8f9fa; font-weight: bold; }
-        .day-divider { /* 요일 구분을 위한 굵은 경계선 (신규) */
-            border-bottom: 3px solid #666;
+        
+        /* ======== 전체 현황 테이블 반응형 처리 (수정) ======== */
+        .table-responsive-wrapper {
+            overflow-x: auto; /* 핵심: 가로 스크롤을 필요할 때만 활성화 */
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-top: 20px;
         }
+        #all-overview-table { 
+            min-width: 700px; /* 테이블의 최소 너비를 지정하여 모바일에서 항상 스크롤이 생기도록 함 */
+        }
+        #all-overview-table th, #all-overview-table td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 0.85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #all-overview-table thead th { background-color: #e9ecef; font-weight: bold; position: sticky; top: 0; } /* 헤더 고정 */
+        #all-overview-table tbody th { background-color: #f8f9fa; font-weight: bold; position: sticky; left: 0; } /* 첫 열 고정 */
+        .day-divider { border-bottom: 3px solid #666; }
+        
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-box { background: #fff; padding: 25px; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; }
         .modal-box h3 { margin-top: 0; }
@@ -87,22 +76,22 @@
             <button id="enter-btn" class="login-btn" disabled>예약 페이지로 이동</button>
         </div>
     </div>
-
     <div id="reservation-view">
         <button class="back-btn">&larr; 처음으로</button><h2 id="reservation-title"></h2>
         <div class="day-tabs" id="day-tabs-container"></div>
         <table id="reservation-table"><thead><tr><th>시간</th><th>예약 상태</th></tr></thead><tbody></tbody></table>
         <button id="download-excel-btn">선택 반 예약 현황 엑셀 다운로드</button>
     </div>
-    
     <div id="all-overview-view">
         <button class="back-btn">&larr; 처음으로</button>
         <h2 id="all-overview-title">전체 반 상담 예약 현황</h2>
-        <table id="all-overview-table"><thead></thead><tbody></tbody></table>
+        <!-- 테이블을 감싸는 div 추가 -->
+        <div class="table-responsive-wrapper">
+            <table id="all-overview-table"><thead></thead><tbody></tbody></table>
+        </div>
         <button id="download-all-classes-excel-btn" class="login-btn" style="margin-top:20px;">전체 예약 현황 엑셀 다운로드</button>
     </div>
 </div>
-
 <div class="modal-overlay" id="alert-modal"><div class="modal-box"><h3>알림</h3><p id="alert-modal-message"></p><div class="modal-buttons"><button class="modal-btn confirm" id="alert-modal-close-btn">확인</button></div></div></div>
 <div class="modal-overlay" id="confirm-modal"><div class="modal-box"><h3>확인</h3><p id="confirm-modal-message"></p><div class="modal-buttons"><button class="modal-btn cancel" id="confirm-modal-no-btn">아니오</button><button class="modal-btn confirm" id="confirm-modal-yes-btn">예</button></div></div></div>
 
@@ -153,65 +142,9 @@ document.addEventListener('DOMContentLoaded', function () {
     async function downloadAllClassesExcel() { const workbook = XLSX.utils.book_new(); const sheetData = []; const headerRow = ['요일/시간']; const allClassNames = Object.keys(studentData); allClassNames.forEach(className => headerRow.push(className)); sheetData.push(headerRow); const timeSlots = []; for (let time = startTime; time < endTime; time += interval) { timeSlots.push(`${String(Math.floor(time/60)).padStart(2,'0')}:${String(time%60).padStart(2,'0')}`); } let allReservations = {}; for (const className of allClassNames) { allReservations[className] = {}; for (const day of dayInfo) { const docRef = db.collection("reservations").doc(`${className}_${day.key}`); const docSnap = await docRef.get(); allReservations[className][day.key] = docSnap.exists ? docSnap.data() : {}; } } dayInfo.forEach(day => { timeSlots.forEach(timeString => { const row = [`${day.label} ${timeString}`]; allClassNames.forEach(className => { const studentName = allReservations[className][day.key][timeString] || ''; row.push(studentName); }); sheetData.push(row); }); }); if (sheetData.length <= 1) { showAlertModal("다운로드할 전체 예약 데이터가 없습니다."); return; } const worksheet = XLSX.utils.aoa_to_sheet(sheetData); XLSX.utils.book_append_sheet(workbook, worksheet, "전체 예약 현황"); XLSX.writeFile(workbook, `전체_상담예약_현황_${new Date().toLocaleDateString()}.xlsx`); }
     downloadAllClassesExcelBtn.addEventListener('click', downloadAllClassesExcel);
     function initializeLoginView() { Object.keys(studentData).forEach(name => classSelect.add(new Option(name, name))); classSelect.addEventListener('change', () => { const selectedClass = classSelect.value; studentSelect.innerHTML = ''; enterBtn.disabled = true; if (selectedClass) { studentFormGroup.style.display = 'block'; studentSelect.add(new Option('-- 이름 선택 --', '')); studentData[selectedClass].forEach(name => studentSelect.add(new Option(name, name))); } else { studentFormGroup.style.display = 'none'; } }); studentSelect.addEventListener('change', () => { enterBtn.disabled = !studentSelect.value; }); enterBtn.addEventListener('click', () => { currentClass = classSelect.value; currentUserName = studentSelect.value; showReservationView(); }); allOverviewBtn.addEventListener('click', showAllOverviewView); backBtns.forEach(btn => btn.addEventListener('click', showLoginView)); }
-    
-    async function showAllOverviewView() {
-        loginView.style.display = 'none';
-        reservationView.style.display = 'none';
-        allOverviewView.style.display = 'block';
-        await generateAllClassesOverviewTable();
-    }
-    
-    function showLoginView() {
-        reservationView.style.display = 'none';
-        allOverviewView.style.display = 'none';
-        loginView.style.display = 'block';
-        classSelect.value = '';
-        studentFormGroup.style.display = 'none';
-        studentSelect.innerHTML = '';
-        enterBtn.disabled = true;
-    }
-
-    // ======== 전체 반 현황 테이블 생성 함수 (경계선 추가 로직) ========
-    async function generateAllClassesOverviewTable() {
-        allOverviewTableHead.innerHTML = '<tr><th>로딩 중...</th></tr>';
-        allOverviewTableBody.innerHTML = '';
-        const allClassNames = Object.keys(studentData);
-        const timeSlots = [];
-        for (let time = startTime; time < endTime; time += interval) { timeSlots.push(`${String(Math.floor(time/60)).padStart(2,'0')}:${String(time%60).padStart(2,'0')}`); }
-        let allReservations = {};
-        for (const className of allClassNames) {
-            allReservations[className] = {};
-            for (const day of dayInfo) {
-                const docRef = db.collection("reservations").doc(`${className}_${day.key}`);
-                const docSnap = await docRef.get();
-                allReservations[className][day.key] = docSnap.exists ? docSnap.data() : {};
-            }
-        }
-        allOverviewTableHead.innerHTML = '';
-        const headerRow = document.createElement('tr');
-        headerRow.innerHTML = '<th>요일/시간</th>';
-        allClassNames.forEach(className => { headerRow.innerHTML += `<th>${className}</th>`; });
-        allOverviewTableHead.appendChild(headerRow);
-        allOverviewTableBody.innerHTML = '';
-        dayInfo.forEach(day => {
-            timeSlots.forEach((timeString, index) => { // index 변수 추가
-                const bodyRow = document.createElement('tr');
-                bodyRow.innerHTML = `<th>${day.label} ${timeString}</th>`;
-                allClassNames.forEach(className => {
-                    const studentName = allReservations[className][day.key][timeString] || '';
-                    bodyRow.innerHTML += `<td>${studentName}</td>`;
-                });
-
-                // 현재 시간이 해당 요일의 마지막 시간이면, 경계선 클래스 추가
-                if (index === timeSlots.length - 1) {
-                    bodyRow.classList.add('day-divider');
-                }
-
-                allOverviewTableBody.appendChild(bodyRow);
-            });
-        });
-    }
-
+    async function showAllOverviewView() { loginView.style.display = 'none'; reservationView.style.display = 'none'; allOverviewView.style.display = 'block'; await generateAllClassesOverviewTable(); }
+    function showLoginView() { reservationView.style.display = 'none'; allOverviewView.style.display = 'none'; loginView.style.display = 'block'; classSelect.value = ''; studentFormGroup.style.display = 'none'; studentSelect.innerHTML = ''; enterBtn.disabled = true; }
+    async function generateAllClassesOverviewTable() { allOverviewTableHead.innerHTML = '<tr><th>로딩 중...</th></tr>'; allOverviewTableBody.innerHTML = ''; const allClassNames = Object.keys(studentData); const timeSlots = []; for (let time = startTime; time < endTime; time += interval) { timeSlots.push(`${String(Math.floor(time/60)).padStart(2,'0')}:${String(time%60).padStart(2,'0')}`); } let allReservations = {}; for (const className of allClassNames) { allReservations[className] = {}; for (const day of dayInfo) { const docRef = db.collection("reservations").doc(`${className}_${day.key}`); const docSnap = await docRef.get(); allReservations[className][day.key] = docSnap.exists ? docSnap.data() : {}; } } allOverviewTableHead.innerHTML = ''; const headerRow = document.createElement('tr'); headerRow.innerHTML = '<th>요일/시간</th>'; allClassNames.forEach(className => { headerRow.innerHTML += `<th>${className}</th>`; }); allOverviewTableHead.appendChild(headerRow); allOverviewTableBody.innerHTML = ''; dayInfo.forEach(day => { timeSlots.forEach((timeString, index) => { const bodyRow = document.createElement('tr'); bodyRow.innerHTML = `<th>${day.label} ${timeString}</th>`; allClassNames.forEach(className => { const studentName = allReservations[className][day.key][timeString] || ''; bodyRow.innerHTML += `<td>${studentName}</td>`; }); if (index === timeSlots.length - 1) { bodyRow.classList.add('day-divider'); } allOverviewTableBody.appendChild(bodyRow); }); }); }
     async function checkForExistingBooking(userName, className) { for (const day of dayInfo) { const docRef = db.collection("reservations").doc(`${className}_${day.key}`); const docSnap = await docRef.get(); if (docSnap.exists) { const data = docSnap.data(); for (const time in data) { if (data[time] === userName) return { day: day.label, time: time }; } } } return null; }
     async function bookSlot(timeString) { const existingBooking = await checkForExistingBooking(currentUserName, currentClass); if (existingBooking) { showAlertModal(`이미 예약된 시간이 있습니다.\n${existingBooking.day}, ${existingBooking.time}`); return; } const docRef = db.collection("reservations").doc(`${currentClass}_${currentDay}`); try { await docRef.set({ [timeString]: currentUserName }, { merge: true }); showAlertModal('예약이 완료되었습니다.'); generateReservationTable(); } catch (error) { console.error("예약 오류: ", error); showAlertModal("오류가 발생하여 예약에 실패했습니다."); } }
     async function cancelBooking(timeString) { const confirmed = await showConfirmModal('정말로 이 예약을 취소하시겠습니까?'); if (!confirmed) return; const docRef = db.collection("reservations").doc(`${currentClass}_${currentDay}`); const FieldValue = firebase.firestore.FieldValue; try { await docRef.update({ [timeString]: FieldValue.delete() }); showAlertModal('예약이 취소되었습니다.'); generateReservationTable(); } catch (error) { console.error("예약 취소 오류: ", error); showAlertModal("예약 취소에 실패했습니다."); } }
